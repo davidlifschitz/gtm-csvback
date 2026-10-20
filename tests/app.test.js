@@ -46,3 +46,16 @@ it('uses local classic scripts so the page can open offline from disk', () => {
   expect(scripts.find(s => s.getAttribute('src') === './app.js').type).not.toBe('module');
   expect(scripts.every(s => !/^https?:/.test(s.getAttribute('src') || ''))).toBe(true);
 });
+
+it('reads an actual modern Numbers workbook', async () => {
+  const XLSX = await import('xlsx');
+  const { default: numbers } = await import('xlsx/dist/xlsx.zahl.mjs');
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['Name','Value'],['Ada',42]]), 'Data');
+  const bytes = XLSX.write(wb, { bookType:'numbers', type:'buffer', numbers, compression:true });
+  const { run, window } = loadApp();
+  window.fixture = bytes;
+  const result = await run('convertFile({name:"book.numbers",type:"",arrayBuffer:async()=>fixture})');
+  expect(result[0].csv).toContain('Ada,42');
+  expect(result[0].csv).toContain('Name,Value');
+});

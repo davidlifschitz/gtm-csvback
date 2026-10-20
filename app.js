@@ -164,6 +164,12 @@ async function convertFile(file) {
   const lower = file.name.toLowerCase();
 
   if (isZip && (lower.endsWith(".numbers") || file.type.includes("numbers"))) {
+    try {
+      const csvs = await fromSpreadsheet(file.name, buf);
+      if (csvs.length) return csvs;
+    } catch (err) {
+      // Legacy Numbers archives may contain standalone CSV or XML tables.
+    }
     return fromNumbersZip(file.name, buf);
   }
   if (isZip || /\.(xlsx|xls|ods)$/i.test(file.name)) {
