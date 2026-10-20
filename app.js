@@ -54,6 +54,11 @@ function looksCsv(text) {
   });
 }
 
+function tsvToCsv(text) {
+  const wb = XLSX.read(text, { type: "string", FS: "\t", raw: true });
+  return sheetToCsv(wb.Sheets[wb.SheetNames[0]]);
+}
+
 function sheetToCsv(sheet) {
   return XLSX.utils.sheet_to_csv(sheet, { FS: ",", RS: "\n" });
 }
@@ -105,7 +110,7 @@ async function fromNumbersZip(name, buf) {
       const text = await zip.files[path].async("string");
       found.push({
         name: `${stem(name)}-${path.split("/").pop().replace(/\.[^.]+$/, "")}.csv`,
-        csv: lower.endsWith(".tsv") ? text.replaceAll("\t", ",") : text,
+        csv: lower.endsWith(".tsv") ? tsvToCsv(text) : text,
         note: path,
       });
     }
@@ -157,7 +162,7 @@ async function convertFile(file) {
 
   const text = decodeText(buf);
   if (looksCsv(text) || /\.(csv|tsv|txt)$/i.test(file.name)) {
-    const csv = file.name.toLowerCase().endsWith(".tsv") ? text.replaceAll("\t", ",") : text;
+    const csv = file.name.toLowerCase().endsWith(".tsv") ? tsvToCsv(text) : text;
     return [{ name: `${stem(file.name)}.csv`, csv, note: "already text" }];
   }
 
