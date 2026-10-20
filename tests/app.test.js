@@ -39,3 +39,10 @@ it('rejects unreasonable XML column indexes', () => {
   const { run } = loadApp();
   expect(() => run('csvFromXmlTables(\'<Table xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"><Row><Cell ss:Index="999999999">value</Cell></Row></Table>\')')).toThrow(/column index/i);
 });
+
+it('uses local classic scripts so the page can open offline from disk', () => {
+  const { window } = loadApp();
+  const scripts = Array.from(window.document.scripts);
+  expect(scripts.find(s => s.getAttribute('src') === './app.js').type).not.toBe('module');
+  expect(scripts.every(s => !/^https?:/.test(s.getAttribute('src') || ''))).toBe(true);
+});
