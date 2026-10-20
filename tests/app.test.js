@@ -14,3 +14,17 @@ it('converts a workbook to named CSVs', () => {
 it('starts with downloading disabled', () => {
   expect(loadApp().window.document.getElementById('run').disabled).toBe(true);
 });
+
+it('quotes commas and preserves quoted tabs when converting TSV', async () => {
+  const { run } = loadApp();
+  const input = 'name\tnote\nAda\t"hello, world"\nBob\t"left\tright"\n';
+  const encoded = Array.from(new TextEncoder().encode(input));
+  const result = await run(`convertFile({name:"input.tsv",type:"text/tab-separated-values",arrayBuffer:async()=>new Uint8Array(${JSON.stringify(encoded)}).buffer})`);
+  expect(result[0].csv).toContain('Ada,"hello, world"');
+  expect(result[0].csv).toContain('Bob,left\tright');
+});
+it('uses the same TSV conversion for archive tables', async () => {
+  const { run } = loadApp();
+  const result = await run('(async()=>{const z=new JSZip();z.file("table.tsv","name\\tnote\\nAda\\thello, world");return fromNumbersZip("book.numbers",await z.generateAsync({type:"uint8array"}));})()');
+  expect(result[0].csv).toContain('Ada,"hello, world"');
+});
