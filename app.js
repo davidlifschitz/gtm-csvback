@@ -89,9 +89,19 @@ function csvFromXmlTables(xml) {
     const rows = [];
     for (const tr of table.getElementsByTagName("*")) {
       if (tr.localName.toLowerCase() !== "tr" && tr.localName.toLowerCase() !== "row") continue;
-      const cells = [...tr.children]
-        .filter((c) => ["td", "th", "cell"].includes(c.localName.toLowerCase()))
-        .map((c) => `"${(c.textContent || "").replaceAll('"', '""')}"`);
+      const cells = [];
+      for (const cell of tr.children) {
+        if (!["td", "th", "cell"].includes(cell.localName.toLowerCase())) continue;
+        const index = cell.getAttributeNS("urn:schemas-microsoft-com:office:spreadsheet", "Index");
+        if (index !== null) {
+          const column = Number(index);
+          if (!Number.isInteger(column) || column <= cells.length || column > 16384) {
+            throw new Error("Invalid XML column index.");
+          }
+          while (cells.length < column - 1) cells.push('""');
+        }
+        cells.push(`"${(cell.textContent || "").replaceAll('"', '""')}"`);
+      }
       if (cells.length) rows.push(cells.join(","));
     }
     if (rows.length) out.push({ name: `table-${idx + 1}.csv`, csv: rows.join("\n") + "\n", note: "xml table" });
